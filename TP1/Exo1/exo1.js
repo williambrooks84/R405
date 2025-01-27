@@ -2,10 +2,13 @@ import * as THREE from 'three';
 
 
 // Scene
-const scene = new THREE.Scene();
+//1. Va contenir tous les objets (ici la sphère), les lumières et la caméra.
+let scene = new THREE.Scene();
 
 
 // Sphere
+//2. Paramètres: rayon, subdivisions en longitude et latitude
+//3. Wireframe: mode "fil de fer (true) ou plein (false)"
 const geometry = new THREE.SphereGeometry(3, 16, 16);
 const material = new THREE.MeshBasicMaterial({
    color: 0xffffff,
@@ -34,3 +37,5 @@ const canvas = document.querySelector(".webgl");
 const renderer = new THREE.WebGLRenderer({ canvas });
 renderer.setSize(800, 600);
 renderer.render(scene, camera);
+
+console.log(scene);
