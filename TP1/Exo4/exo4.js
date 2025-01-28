@@ -35,15 +35,16 @@ const geometry = new THREE.TorusGeometry(8, 3);
 });*/
 
 //Standard Material
-/*const material = new THREE.MeshStandardMaterial({
+const material = new THREE.MeshStandardMaterial({
   color: 0xffffff,
-  roughness: 0.15,
-  metalness: 0.5,
-  lights: true,
-});*/
+  roughness: 0.55,
+  metalness: 0.95,
+  //lights: true,
+  transparent: true,
+});
 
 //Physical Material
-const material = new THREE.MeshPhysicalMaterial({
+/*const material = new THREE.MeshPhysicalMaterial({
   color: 0xffffff,
   roughness: 0.15,
   metalness: 0.15,
@@ -52,16 +53,16 @@ const material = new THREE.MeshPhysicalMaterial({
   clearCoatRoughness: 0.95,
   lights: true,
   flatShading: true,
-});
+});*/
 
 const mesh = new THREE.Mesh(geometry, material);
 mesh.rotateX(Math.PI / 2);
 scene.add(mesh);
 
 // Light
-//const light = new THREE.PointLight(0xffffff, 1, 100);
+const light = new THREE.PointLight(0xffffff, 1, 100);
 //const light = new THREE.DirectionalLight(0xffffff, 1);
-const light = new THREE.SpotLight(0xff0000, 1);
+//const light = new THREE.SpotLight(0xff0000, 1);
 light.position.set(10, 10, 10); //X, Y, Z
 scene.add(light);
 const aLight = new THREE.AmbientLight(0x151515); //Lumière en-dessous de la sphère
@@ -99,10 +100,18 @@ const loop = () => {
 
 loop();
 
+gsap.fromTo(mesh.material, {opacity: 0}, {opacity: 1, duration: 2});
+gsap.fromTo(mesh.scale, {x: 0, y: 0, z: 0}, {x: 1, y: 1, z: 1, duration: 2, ease: "elastic"});
+
 scene.add(new THREE.AxesHelper(10));
 //scene.add(new THREE.PointLightHelper(light));
 //scene.add(new THREE.DirectionalLightHelper(light));
-scene.add(new THREE.SpotLightHelper(light));
+scene.add(new THREE.PointLightHelper(light));
 scene.add(new THREE.GridHelper(10, 10));
- 
+
+window.addEventListener("mousedown", (event) => {
+  console.log("X: " + event.pageX + " / Y: " + event.pageY);
+  gsap.to(mesh.material.color, {r: event.pageX / window.innerWidth, g: event.pageY / window.innerHeight, b: 0.5, duration: 1, ease: "elastic"});  
+});
+
 //console.log(scene);
