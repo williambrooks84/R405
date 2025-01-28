@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 // Scene
 //1. Va contenir tous les objets (ici la sphère), les lumières et la caméra.
@@ -11,7 +12,7 @@ let scene = new THREE.Scene();
 // => important quon a plusieurs objets de lumières
 // => en pratique on dépasse rarement 5 lumières
 
-const geometry = new THREE.SphereGeometry(6, 32, 32);
+const geometry = new THREE.TorusGeometry(8, 3);
 /*const material = new THREE.MeshBasicMaterial({
    color: 0xffffff,
    wireframe: true,
@@ -54,10 +55,13 @@ const material = new THREE.MeshPhysicalMaterial({
 });
 
 const mesh = new THREE.Mesh(geometry, material);
+mesh.rotateX(Math.PI / 2);
 scene.add(mesh);
 
 // Light
-const light = new THREE.PointLight(0xffffff, 1, 100);
+//const light = new THREE.PointLight(0xffffff, 1, 100);
+//const light = new THREE.DirectionalLight(0xffffff, 1);
+const light = new THREE.SpotLight(0xff0000, 1);
 light.position.set(10, 10, 10); //X, Y, Z
 scene.add(light);
 const aLight = new THREE.AmbientLight(0x151515); //Lumière en-dessous de la sphère
@@ -85,17 +89,20 @@ window.addEventListener("resize", () => {
   renderer.render(scene, camera);
 });
 
-let angleLight = 0;
-
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
 const loop = () => {
-  // Ajoutez ci-dessous le code pour faire tourner la sphère
-  //mesh.rotateY(0.01);
-  light.position.x = 10 * Math.cos(angleLight);
-  light.position.z = 10 * Math.sin(angleLight);
-  renderer.render(scene, camera);
-  angleLight += 0.002;
-  window.requestAnimationFrame(loop);
+   controls.update();
+   renderer.render(scene, camera);
+   window.requestAnimationFrame(loop);
 };
+
 loop();
+
+scene.add(new THREE.AxesHelper(10));
+//scene.add(new THREE.PointLightHelper(light));
+//scene.add(new THREE.DirectionalLightHelper(light));
+scene.add(new THREE.SpotLightHelper(light));
+scene.add(new THREE.GridHelper(10, 10));
  
 //console.log(scene);
