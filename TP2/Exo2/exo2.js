@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
+
 
 const scene = new THREE.Scene();
 
@@ -7,14 +10,15 @@ const scene = new THREE.Scene();
 const objects = [];
 
 //Camera
-const fov = 75;
-const aspect = 2;  // the canvas default
+const fov = 40;
+const aspect = window.innerWidth / window.innerHeight;  // the canvas default
 const near = 0.1;
 const far = 1000;
 const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
 camera.position.set(0, 50, 0);
 camera.up.set(0, 0, 1);
 camera.lookAt(0, 0, 0);
+
 
 //Light
 const color = 0xFFFFFF;
@@ -69,12 +73,50 @@ const canvas = document.querySelector(".webgl");
 const renderer = new THREE.WebGLRenderer({ canvas });
 renderer.setSize(window.innerWidth, window.innerHeight);
 
-function loop(time) {
-  time *= 0.001;  // convert to seconds
-  objects.forEach((obj) => {
-    obj.rotation.y += 0.01;
-  });
+//Controls (Q1)
+const controls = new OrbitControls( camera, renderer.domElement );
+controls.enableDamping = true;
 
+//Q2
+const size = 25;
+const divisions = 20;
+const gridHelper = new THREE.GridHelper(size, divisions);
+scene.add(gridHelper);
+
+//Q3 
+const gui = new GUI();
+const params = {
+  soleil : true,
+  terre: true,
+  lune: true,
+  grille: true,
+  vitesse: 0.025
+}
+
+gui.add(params, "soleil");
+gui.add(params, "terre");
+gui.add(params, "lune");
+gui.add(params, "grille");
+gui.add(params, "vitesse", 0.01, 0.1);
+
+const container = document.getElementById('container');
+const stats = new Stats();
+container.appendChild(stats.dom)
+
+let time = 0;
+
+//Loop
+function loop() {
+  sunMesh.visible = params.soleil;
+  earthMesh.visible = params.terre;
+  moonMesh.visible = params.lune;
+  gridHelper.visible = params.grille;
+  time += params.vitesse;  // convert to seconds
+  objects.forEach((obj) => {
+    obj.rotation.y = time;
+  });
+  controls.update();
+  stats.update();
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
@@ -83,10 +125,9 @@ function loop(time) {
 loop();
 
 // add an AxesHelper to each node
-objects.forEach((node) => {
+/*objects.forEach((node) => {
   const axes = new THREE.AxesHelper();
   axes.material.depthTest = false;
   axes.renderOrder = 1;
   node.add(axes);
-});
-
+});*/
