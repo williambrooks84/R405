@@ -42,8 +42,8 @@ objects.push(solarSystem);
  
 // use just one sphere for everything
 const radius = 1;
-const widthSegments = 6;
-const heightSegments = 6;
+const widthSegments = 32;
+const heightSegments = 32;
 const sphereGeometry = new THREE.SphereGeometry(
     radius, widthSegments, heightSegments);
 
@@ -123,6 +123,7 @@ const params = {
   terre: true,
   lune: true,
   grille: true,
+  orbit: true,
   vitesse: 0.025
 }
 
@@ -130,7 +131,8 @@ gui.add(params, "soleil");
 gui.add(params, "terre");
 gui.add(params, "lune");
 gui.add(params, "grille");
-gui.add(params, "vitesse", 0.01, 0.1);
+gui.add(params, "orbit");
+gui.add(params, "vitesse", 0, 0.1);
 
 const container = document.getElementById('container');
 const stats = new Stats();
@@ -144,6 +146,7 @@ function loop() {
   earthMesh.visible = params.terre;
   moonMesh.visible = params.lune;
   gridHelper.visible = params.grille;
+  orbitObject.visible = params.orbit;
   time += params.vitesse;  // convert to seconds
   objects.forEach((obj) => {
     obj.rotation.y = time;
@@ -153,6 +156,13 @@ function loop() {
   renderer.render(scene, camera);
   requestAnimationFrame(loop);
 }
+
+// Tore
+const orbitGeometry = new THREE .TorusGeometry(10, 0.1, 16, 100);
+const orbitMaterial = new THREE.MeshBasicMaterial({ color: 0x6656d });
+const orbitObject = new THREE.Mesh(orbitGeometry, orbitMaterial);
+scene.add(orbitObject);
+orbitObject.rotateX(Math.PI / 2);
 
 // Start the animation loop
 loop();
