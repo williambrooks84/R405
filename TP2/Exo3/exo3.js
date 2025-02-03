@@ -5,6 +5,15 @@ import Stats from 'three/addons/libs/stats.module.js';
 
 
 const scene = new THREE.Scene();
+scene.background = new THREE.CubeTextureLoader().setPath( 'textures/cubeMaps/' )
+.load( [
+      'dark-s_nx.jpg',
+      'dark-s_ny.jpg',
+      'dark-s_nz.jpg',
+      'dark-s_px.jpg',
+      'dark-s_py.jpg',
+      'dark-s_pz.jpg'
+    ] );
 
 // an array of objects whose rotation to update
 const objects = [];
@@ -39,7 +48,12 @@ const sphereGeometry = new THREE.SphereGeometry(
     radius, widthSegments, heightSegments);
 
 //Sun    
-const sunMaterial = new THREE.MeshPhongMaterial({emissive: 0xFFFF00});
+const sunMaterial = new THREE.MeshPhongMaterial({
+  emissive: 0xffff00,
+  emissiveMap: new THREE.TextureLoader().load('./images/sun.jpg'),
+  emissiveIntensity: 1
+});
+
 const sunMesh = new THREE.Mesh(sphereGeometry, sunMaterial);
 sunMesh.scale.set(5, 5, 5);  // make the sun large
 solarSystem.add(sunMesh);
@@ -52,7 +66,18 @@ earthOrbit.position.x = 10;
 solarSystem.add(earthOrbit);
 objects.push(earthOrbit);
 
-const earthMaterial = new THREE.MeshPhongMaterial({color: 0x2233FF, emissive: 0x112244});
+const earthColor = "./images/earthmap1k.jpg";
+const earthBump = "./images/earthbump1k.jpg";
+const earthSpec = "./images/earthspec1k.jpg";
+const textureLoader = new THREE.TextureLoader();
+const earthMaterial = new THREE.MeshPhongMaterial({
+   map: textureLoader.load(earthColor),
+   bumpMap: textureLoader.load(earthBump),
+   specularMap: textureLoader.load(earthSpec),
+   bumpScale: 0.25,
+   shininess: 1
+});
+
 const earthMesh = new THREE.Mesh(sphereGeometry, earthMaterial);
 earthOrbit.add(earthMesh);
 objects.push(earthMesh);
@@ -62,7 +87,15 @@ const moonOrbit = new THREE.Object3D();
 moonOrbit.position.x = 2;
 earthOrbit.add(moonOrbit);
  
-const moonMaterial = new THREE.MeshPhongMaterial({color: 0x888888, emissive: 0x222222});
+const moonColor = "./images/moonmap1k.jpg";
+const moonBump = "./images/moonbump1k.jpg";
+const moonMaterial = new THREE.MeshPhongMaterial({
+   map: textureLoader.load(moonColor),
+   bumpMap: textureLoader.load(moonBump),
+   bumpScale: 0.25,
+   shininess: 1
+});
+
 const moonMesh = new THREE.Mesh(sphereGeometry, moonMaterial);
 moonMesh.scale.set(.5, .5, .5);
 moonOrbit.add(moonMesh);
