@@ -7,12 +7,12 @@ import Stats from 'three/addons/libs/stats.module.js';
 const scene = new THREE.Scene();
 scene.background = new THREE.CubeTextureLoader().setPath( 'textures/cubeMaps/' )
 .load( [
-      'dark-s_nx.jpg',
-      'dark-s_ny.jpg',
-      'dark-s_nz.jpg',
       'dark-s_px.jpg',
+      'dark-s_nx.jpg',
       'dark-s_py.jpg',
-      'dark-s_pz.jpg'
+      'dark-s_ny.jpg',
+      'dark-s_pz.jpg',
+      'dark-s_nz.jpg'
     ] );
 
 // an array of objects whose rotation to update
