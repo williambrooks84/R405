@@ -24,40 +24,83 @@ const aspect = window.innerWidth / window.innerHeight;  // the canvas default
 const near = 0.1;
 const far = 1000;
 const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-camera.position.set(0, 50, 0);
-camera.up.set(0, 0, 1);
-camera.lookAt(0, 0, 0);
+camera.position.set(10, 20, 80); //x, y, z
+scene.add(camera);
 
 
 //Light
 let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-light.position.set(50, 100, 10);
+light.position.set( 50, 100, 10 ); //x, y, z
 light.target.position.set(0, 0, 0);
-scene.add(light);
-scene.add(new THREE.DirectionalLightHelper(light));
+scene.add( light );
+light.castShadow = true;
+light.shadow.bias = -0.001;
+light.shadow.mapSize.width = 2048;
+light.shadow.mapSize.height = 2048;
+light.shadow.camera.near = 50;
+light.shadow.camera.far = 150;
+light.shadow.camera.left = 100;
+light.shadow.camera.right = -100;
+light.shadow.camera.top = 100;
+light.shadow.camera.bottom = -100;
+//Helper
+const camHelper = new THREE.CameraHelper( light.shadow.camera );
+scene.add( camHelper );
+
+
+//Ground
+const plane = new THREE.Mesh(
+  new THREE.PlaneGeometry(100, 100, 10, 10),
+  new THREE.MeshPhongMaterial({
+    color: 0xFFFFFF,
+  }));
+plane.rotation.x = -Math.PI / 2;
+plane.receiveShadow = true;
+plane.castShadow = false;
+scene.add(plane);
+
+//Backface culling
+
+//Box
+const box = new THREE.Mesh(
+  new THREE.BoxGeometry(5, 10, 1),
+  new THREE.MeshPhongMaterial({ color: 0x808080 })
+);
+box.position.y=7;
+box.castShadow = true;
+box.receiveShadow = false;
+scene.add(box);
+
 
 // Renderer
 const canvas = document.querySelector(".webgl");
-const renderer = new THREE.WebGLRenderer({ canvas });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); //Antialias: effet marches d'escalier
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.render(scene, camera);
+
+//Resize
+window.addEventListener('resize', () => {
+  // Update camera
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  // Update renderer
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.render(scene, camera);
+});
 
 //Controls (Q1)
 const controls = new OrbitControls( camera, renderer.domElement );
 controls.enableDamping = true;
 
-//Q2
-const size = 25;
-const divisions = 20;
-const gridHelper = new THREE.GridHelper(size, divisions);
-scene.add(gridHelper);
-
 //Q3 
 const gui = new GUI();
 const params = {
-  grille: true,
+  camHelper: true,
 }
 
-gui.add(params, "grille");
+gui.add(params, "camHelper");
 
 const container = document.getElementById('container');
 const stats = new Stats();
@@ -65,7 +108,7 @@ container.appendChild(stats.dom)
 
 //Loop
 function loop() {
-  gridHelper.visible = params.grille;
+  camHelper.visible = params.camHelper;
   controls.update();
   stats.update();
   renderer.render(scene, camera);
