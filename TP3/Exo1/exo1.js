@@ -34,9 +34,9 @@ light.position.set( 50, 100, 10 ); //x, y, z
 light.target.position.set(0, 0, 0);
 scene.add( light );
 light.castShadow = true;
-light.shadow.bias = -0.001;
-light.shadow.mapSize.width = 2048;
-light.shadow.mapSize.height = 2048;
+light.shadow.bias = -0.1;
+light.shadow.mapSize.width = 1024; //Puissances de 2 
+light.shadow.mapSize.height = 1024; //Puissances de 2
 light.shadow.camera.near = 50;
 light.shadow.camera.far = 150;
 light.shadow.camera.left = 100;
@@ -66,7 +66,7 @@ const box = new THREE.Mesh(
   new THREE.BoxGeometry(5, 10, 1),
   new THREE.MeshPhongMaterial({ color: 0x808080 })
 );
-box.position.y=7;
+box.position.y = 7;
 box.castShadow = true;
 box.receiveShadow = false;
 scene.add(box);
@@ -78,6 +78,7 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true }); //Antiali
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
 renderer.render(scene, camera);
 
 //Resize
