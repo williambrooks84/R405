@@ -3,6 +3,9 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import Stats from "three/addons/libs/stats.module.js";
 
+//go clavier
+let go = false;
+
 const scene = new THREE.Scene();
 scene.background = new THREE.CubeTextureLoader()
   .setPath("HeartInTheSand/")
@@ -39,9 +42,12 @@ light.shadow.camera.left = 100;
 light.shadow.camera.right = -100;
 light.shadow.camera.top = 100;
 light.shadow.camera.bottom = -100;
+
 //Helper
 const camHelper = new THREE.CameraHelper(light.shadow.camera);
 scene.add(camHelper);
+const axesHelper = new THREE.AxesHelper( 5 );
+scene.add( axesHelper );
 
 //Ground
 const plane = new THREE.Mesh(
@@ -72,16 +78,35 @@ barre.castShadow = true;
 mainGroup.add(barre);
 
 let sphGeometry = new THREE.SphereGeometry(4, 32, 32);
-//Vertical bar
-let groupe0 = new THREE.Object3D();
-let cVertical = new THREE.Mesh(cylGeometry, mat);
-cVertical.scale.set(0.5, 15, 0.5);
-cVertical.position.y = -15/2;
-groupe0.add(cVertical);
-let sph = new THREE.Mesh(sphGeometry, mat);
-sph.position.y = -15;
-groupe0.add(sph);
-mainGroup.add(groupe0);
+
+//All vertical bars
+let sensRotation = [];
+let groups = [];
+
+let hauteur = 15;
+let vitesse = 3;
+
+for (let x = -40; x <= 40; x += 10) {
+  //Vertical bar
+  let groupe0 = new THREE.Object3D();
+  let cVertical = new THREE.Mesh(cylGeometry, mat);
+  cVertical.scale.set(0.5, 15, 0.5);
+  cVertical.position.y = -15/2;
+  cVertical.castShadow = true;
+  groupe0.add(cVertical);
+  let sph = new THREE.Mesh(sphGeometry, mat);
+  sph.position.y = -15;
+  sph.castShadow = true;
+  groupe0.add(sph);
+  groupe0.rotation.x = -Math.PI/3;
+  groupe0.position.x = x;
+  mainGroup.add(groupe0);
+  groups.push(groupe0);
+  sensRotation.push(vitesse);
+  hauteur =+ 1.4;
+  vitesse -=0.25;
+  //let sensRotation = 1;
+}
 
 // Renderer
 const canvas = document.querySelector(".webgl");
@@ -104,9 +129,15 @@ document.body.appendChild(stats.dom);
 const gui = new GUI();
 const params = {
   camHelper: true,
+  axesHelper: true,
 };
+
 gui.add(params, "camHelper").onChange((value) => {
   camHelper.visible = value;
+});
+
+gui.add(params, "axesHelper").onChange((value) => {
+  axesHelper.visible = value;
 });
 
 //Resize
@@ -125,3 +156,39 @@ camera.updateProjectionMatrix();
 // Update renderer
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.render(scene, camera);
+
+function loop() {
+  axesHelper.visible = params.axesHelper;
+
+  if (go){
+    for (let i=0; i<groups.length; i++) {
+      let groupe0=groups[i];
+      groupe0.rotation.x += sensRotation[i]*0.025;
+      if (groupe0.rotation.x > Math.PI / 3) {
+        groupe0.rotation.x = Math.PI / 3;
+        sensRotation[i] = -1;
+      }
+      if (groupe0.rotation.x < -Math.PI / 3){
+        sensRotation[i] = 1;
+        groupe0.rotation.x = -Math.PI / 3;
+      }
+    }
+  }
+
+  controls.update();
+  stats.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+loop();
+
+window.addEventListener('keydown', (event) => {
+   go = true; 
+});
