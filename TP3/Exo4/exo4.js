@@ -57,26 +57,31 @@ scene.add(plane);
 
 //Backface culling
 
-//Boxes
-let boxG = new THREE.BoxGeometry(1, 1, 1);
-for (let x = -8; x < 9; x++) {
-  for (let z = -8; z < 9; z++) {
-    const h = Math.random() * 8.0 + 2.0;
-    const box = new THREE.Mesh(
-      boxG,
-      new THREE.MeshPhongMaterial({ color: 0x808080 })
-    );
-    box.scale.set(2, h, 2);
-    box.position.set(
-      Math.random() * 3 + x * 5,
-      h / 2 + 5,
-      Math.random() * 5 + z * 5
-    );
-    box.castShadow = true;
-    box.receiveShadow = true;
-    scene.add(box);
-  }
-}
+//Main group
+let mainGroup = new THREE.Object3D();
+mainGroup.position.y = 30;
+scene.add(mainGroup);
+
+//Horizontal bar
+let cylGeometry = new THREE.CylinderGeometry(1, 1, 1, 100, 100);
+let mat = new THREE.MeshPhongMaterial({ color: 0x808080 });
+let barre = new THREE.Mesh(cylGeometry, mat);
+barre.scale.set(3, 100, 3);
+barre.rotateZ(Math.PI/2);
+barre.castShadow = true;
+mainGroup.add(barre);
+
+let sphGeometry = new THREE.SphereGeometry(4, 32, 32);
+//Vertical bar
+let groupe0 = new THREE.Object3D();
+let cVertical = new THREE.Mesh(cylGeometry, mat);
+cVertical.scale.set(0.5, 15, 0.5);
+cVertical.position.y = -15/2;
+groupe0.add(cVertical);
+let sph = new THREE.Mesh(sphGeometry, mat);
+sph.position.y = -15;
+groupe0.add(sph);
+mainGroup.add(groupe0);
 
 // Renderer
 const canvas = document.querySelector(".webgl");
