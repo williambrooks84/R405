@@ -4,162 +4,280 @@ import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import Stats from "three/addons/libs/stats.module.js";
 
 const canvas = document.querySelector('[data-canvas]')
+const scene = new THREE.Scene();
+
+scene.background = new THREE.Color(0xffffff); // Set background to white
+scene.fog = new THREE.Fog(0xffffff, 0.1, 15);
+
+const planeGeometry = new THREE.PlaneGeometry(100, 100);
+const planeMaterial = new THREE.MeshLambertMaterial({ color: 0xd3d3d3 });
+const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+plane.rotation.x = -Math.PI / 2;
+plane.position.y = -3; // Adjusted to -1.5 to match the figure's initial y position
+scene.add(plane);
 
 const degreesToRadians = (degrees) => {
-	return degrees * (Math.PI / 180)
-}
+  return degrees * (Math.PI / 180);
+};
 
-// Scene
-const scene = new THREE.Scene()
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight
+};
+
+// Helpers
+const center = (group) => {
+  new THREE.Box3().setFromObject(group).getCenter(group.position).multiplyScalar(-1);
+  scene.add(group);
+};
+
+const random = (min, max, float = false) => {
+  const val = Math.random() * (max - min) + min;
+
+  if (float) {
+    return val;
+  }
+
+  return Math.floor(val);
+};
+
+/**
+ * Renderer
+ */
+const renderer = new THREE.WebGLRenderer({ canvas });
+
+const render = () => {
+  renderer.setSize(sizes.width, sizes.height);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.render(scene, camera);
+};
 
 // Camera
-const camera = new THREE.PerspectiveCamera(45,window.innerWidth / window.innerHeight);
-camera.position.z = 5
-scene.add(camera)
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
+camera.position.z = 5;
+scene.add(camera);
 
-//Material
-const material = new THREE.MeshLambertMaterial({ color: 0xffffff })
+window.addEventListener('resize', () => {
+  // Update sizes
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
 
+  // Update camera
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
+
+  // Update renderer
+  render();
+});
+
+// Material
+const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+
+// Lighting
+const lightAmbient = new THREE.AmbientLight(0x9eaeff, 0.5);
+scene.add(lightAmbient);
+
+const lightDirectional = new THREE.DirectionalLight(0xffffff, 0.8);
+scene.add(lightDirectional);
+
+// Move the light source towards us
+lightDirectional.position.set(5, 5, 5);
+
+// Figure
 class Figure {
-	constructor(params) {
+  constructor(params) {
     this.params = {
       x: 0,
-      y: 1.4,
+      y: 0,
       z: 0,
       ry: 0,
-      armRotation: 0
-  };
+      ...params
+    };
 
-		
-		this.group = new THREE.Group()
-		scene.add(this.group)
-	}
+    // Create group and add to scene
+    this.group = new THREE.Group();
+    scene.add(this.group);
+
+    // Position according to params
+    this.group.position.x = this.params.x;
+    this.group.position.y = this.params.y;
+    this.group.position.z = this.params.z;
+
+    // Material
+    this.headHue = random(0, 360);
+    this.bodyHue = random(0, 360);
+    this.headLightness = random(40, 65);
+    this.headMaterial = new THREE.MeshLambertMaterial({ color: `hsl(${this.headHue}, 30%, ${this.headLightness}%)` });
+    this.bodyMaterial = new THREE.MeshLambertMaterial({ color: `hsl(${this.bodyHue}, 85%, 50%)` });
+
+    this.arms = [];
+  }
 
   createBody() {
-    const geometry = new THREE.BoxGeometry(1, 1.5, 1)
-    const body = new THREE.Mesh(geometry, material)
-    this.group.add(body)
+    this.body = new THREE.Group();
+    const geometry = new THREE.BoxGeometry(1, 1.5, 1);
+    const bodyMain = new THREE.Mesh(geometry, this.bodyMaterial);
+
+    this.body.add(bodyMain);
+    this.group.add(this.body);
+
+    this.createLegs();
   }
-	
+
   createHead() {
     // Create a new group for the head
-    this.head = new THREE.Group()
-    
+    this.head = new THREE.Group();
+
     // Create the main cube of the head and add to the group
-    const geometry = new THREE.BoxGeometry(1.4, 1.4, 1.4)
-    const headMain = new THREE.Mesh(geometry, material)
-    this.head.add(headMain)
-    
+    const geometry = new THREE.BoxGeometry(1.4, 1.4, 1.4);
+    const headMain = new THREE.Mesh(geometry, this.headMaterial);
+    this.head.add(headMain);
+
     // Add the head group to the figure
-    this.group.add(this.head)
-    
+    this.group.add(this.head);
+
     // Position the head group
-    this.head.position.y = 1.65
-    
-    // Add the eyes by calling the function we already made
-    this.createEyes()
+    this.head.position.y = 1.65;
+
+    // Add the eyes
+    this.createEyes();
   }
 
   createArms() {
-    const geometry = new THREE.BoxGeometry(0.25, 1, 0.25)
-    
-    for(let i = 0; i < 2; i++) {
-      const arm = new THREE.Mesh(geometry, material)
-      const m = i % 2 === 0 ? 1 : -1
-      
-      // Create group for each arm
-      const armGroup = new THREE.Group()
-      
-      // Add the arm to the group
-      armGroup.add(arm)
-      
-      // Add the arm group to the figure
-      this.group.add(armGroup)
-      
-      // Position the arm group
-      armGroup.position.x = m * 0.8
-      armGroup.position.y = 0.1
-      armGroup.rotation.z = degreesToRadians(30 * m)
+    const height = 0.85;
 
-      // Helper
-      const box = new THREE.BoxHelper(armGroup, 0xffff00)
-      this.group.add(box)
+    for (let i = 0; i < 2; i++) {
+      const armGroup = new THREE.Group();
+      const geometry = new THREE.BoxGeometry(0.25, height, 0.25);
+      const arm = new THREE.Mesh(geometry, this.headMaterial);
+      const m = i % 2 === 0 ? 1 : -1;
+
+      // Add arm to group
+      armGroup.add(arm);
+
+      // Add group to figure
+      this.body.add(armGroup);
+
+      // Translate the arm by half the height
+      arm.position.y = height * -0.5;
+
+      // Position the arm relative to the figure
+      armGroup.position.x = m * 0.8;
+      armGroup.position.y = 0.6;
+
+      // Rotate the arm
+      armGroup.rotation.z = degreesToRadians(30 * m);
+
+      // Push to the array
+      this.arms.push(armGroup);
     }
   }
 
   createEyes() {
-    const eyes = new THREE.Group()
-    const geometry = new THREE.SphereGeometry(0.15, 12, 8)
-    
-    // Define the eye material
-    const material = new THREE.MeshLambertMaterial({ color: 0x44445c })
-    
-    for(let i = 0; i < 2; i++) {
-      const eye = new THREE.Mesh(geometry, material)
-      const m = i % 2 === 0 ? 1 : -1
-      
-      // Add the eye to the group
-      eyes.add(eye)
-      
-      // Position the eye
-      eye.position.x = 0.36 * m
+    const eyes = new THREE.Group();
+    const geometry = new THREE.SphereGeometry(0.15, 12, 8);
+    const material = new THREE.MeshLambertMaterial({ color: 0x44445c });
+
+    for (let i = 0; i < 2; i++) {
+      const eye = new THREE.Mesh(geometry, material);
+      const m = i % 2 === 0 ? 1 : -1;
+
+      eyes.add(eye);
+      eye.position.x = 0.36 * m;
     }
-    this.head.add(eyes)
-    eyes.position.z = 0.7
+
+    this.head.add(eyes);
+
+    eyes.position.y = -0.1;
+    eyes.position.z = 0.7;
   }
 
   createLegs() {
-    const legs = new THREE.Group()
-    const geometry = new THREE.BoxGeometry(0.25, 0.4, 0.25)
-    
-    for(let i = 0; i < 2; i++) {
-      const leg = new THREE.Mesh(geometry, material)
-      const m = i % 2 === 0 ? 1 : -1
-      
-      legs.add(leg)
-      leg.position.x = m * 0.22
+    const legs = new THREE.Group();
+    const geometry = new THREE.BoxGeometry(0.25, 0.4, 0.25);
+
+    for (let i = 0; i < 2; i++) {
+      const leg = new THREE.Mesh(geometry, this.headMaterial);
+      const m = i % 2 === 0 ? 1 : -1;
+
+      legs.add(leg);
+      leg.position.x = m * 0.22;
     }
-    
-    this.group.add(legs)
-    legs.position.y = -1.15
-    
-    // this.body.add(legs)
+
+    this.group.add(legs);
+    legs.position.y = -1.15;
+
+    this.body.add(legs);
   }
-  
+
+  bounce() {
+    this.group.rotation.y = this.params.ry;
+    this.group.position.y = this.params.y;
+    this.arms.forEach((arm, index) => {
+      const m = index % 2 === 0 ? 1 : -1;
+      arm.rotation.z = this.params.armRotation * m;
+    });
+  }
+
   init() {
-    this.createBody()
-    this.createHead()
-    this.createArms()
-    this.createEyes()
-    this.createLegs()
+    this.createBody();
+    this.createHead();
+    this.createArms();
   }
 }
 
-const figure = new Figure()
-figure.init()
+const figure = new Figure();
+figure.init();
 
-// Cube
-const geometry = new THREE.BoxGeometry(1, 1, 1)
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
+gsap.set(figure.params, {
+  y: -1.5 // Adjusted to -1.5 to match the plane's y position
+});
 
-//Rotate cube
-mesh.rotation.x = degreesToRadians(30)
-mesh.rotation.y = degreesToRadians(30)
+gsap.to(figure.params, {
+  ry: degreesToRadians(360),
+  repeat: -1,
+  duration: 20
+});
 
-//Light
-const lightDirectional = new THREE.DirectionalLight(0xffffff, 1)
-scene.add(lightDirectional)
-// Move the light source towards us and off-center
-lightDirectional.position.set(5, 5, 5)
+gsap.to(figure.params, {
+  y: 0,
+  armRotation: degreesToRadians(90),
+  repeat: -1,
+  yoyo: true,
+  duration: 0.5
+});
 
-//Ambient light
-const lightAmbient = new THREE.AmbientLight(0x9eaeff, 0.2)
-scene.add(lightAmbient)
+gsap.ticker.add(() => {
+  figure.bounce();
+  render();
+  stats.update();
+});
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({ canvas })
+// Controls (Q1)
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-// Render
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.render(scene, camera)
+const stats = new Stats();
+document.body.appendChild(stats.dom);
+
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
+
+const camHelper = new THREE.CameraHelper(camera);
+scene.add(camHelper);
+
+const gui = new GUI();
+const params = {
+  camHelper: true,
+  axesHelper: true,
+};
+
+gui.add(params, "camHelper").onChange((value) => {
+  camHelper.visible = value;
+});
+
+gui.add(params, "axesHelper").onChange((value) => {
+  axesHelper.visible = value;
+});
+
+render();
