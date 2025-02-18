@@ -10,7 +10,7 @@ Ce projet utilise **Three.js** pour créer et manipuler des objets **3D** avec d
 ## Utilisation  
 
 Aucune installation requise.  
-1. **Téléchargez** ou **clonez** le projet.  
+1. **Téléchargez** ou **clonez** le projet (git clone https://github.com/williambrooks84/R405.git).  
 2. **Ouvrez** les fichiers `index.html` dans un navigateur.  
 
 ## Fonctionnalités  
