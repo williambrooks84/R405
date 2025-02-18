@@ -2,8 +2,9 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 import Stats from "three/addons/libs/stats.module.js";
+//import Figure from "./Figure.js";
 
-const canvas = document.querySelector('[data-canvas]')
+const canvas = document.querySelector("[data-canvas]");
 const scene = new THREE.Scene();
 
 scene.background = new THREE.Color(0xffffff); // Set background to white
@@ -23,12 +24,15 @@ const degreesToRadians = (degrees) => {
 
 const sizes = {
   width: window.innerWidth,
-  height: window.innerHeight
+  height: window.innerHeight,
 };
 
 // Helpers
 const center = (group) => {
-  new THREE.Box3().setFromObject(group).getCenter(group.position).multiplyScalar(-1);
+  new THREE.Box3()
+    .setFromObject(group)
+    .getCenter(group.position)
+    .multiplyScalar(-1);
   scene.add(group);
 };
 
@@ -55,11 +59,16 @@ const render = () => {
 };
 
 // Camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(
+  75,
+  sizes.width / sizes.height,
+  0.1,
+  1000
+);
 camera.position.z = 5;
 scene.add(camera);
 
-window.addEventListener('resize', () => {
+window.addEventListener("resize", () => {
   // Update sizes
   sizes.width = window.innerWidth;
   sizes.height = window.innerHeight;
@@ -94,7 +103,9 @@ class Figure {
       y: 0,
       z: 0,
       ry: 0,
-      ...params
+      armRotation: 0,
+      headRotation: 0,
+      leftEyeScale: 1
     };
 
     // Create group and add to scene
@@ -110,8 +121,12 @@ class Figure {
     this.headHue = random(0, 360);
     this.bodyHue = random(0, 360);
     this.headLightness = random(40, 65);
-    this.headMaterial = new THREE.MeshLambertMaterial({ color: `hsl(${this.headHue}, 30%, ${this.headLightness}%)` });
-    this.bodyMaterial = new THREE.MeshLambertMaterial({ color: `hsl(${this.bodyHue}, 85%, 50%)` });
+    this.headMaterial = new THREE.MeshLambertMaterial({
+      color: `hsl(${this.headHue}, 30%, ${this.headLightness}%)`,
+    });
+    this.bodyMaterial = new THREE.MeshLambertMaterial({
+      color: `hsl(${this.bodyHue}, 85%, 50%)`,
+    });
 
     this.arms = [];
   }
@@ -134,11 +149,25 @@ class Figure {
     this.head = new THREE.Group();
 
     // Create the main cube of the head and add to the group
-    const geometry = new THREE.BoxGeometry(1.4, 1.4, 1.4);
+    const geometry = new THREE.SphereGeometry(0.9, 32, 32);
     const headMain = new THREE.Mesh(geometry, this.headMaterial);
     headMain.castShadow = true; // Enable shadow casting
     headMain.receiveShadow = true; // Enable shadow receiving
     this.head.add(headMain);
+
+    //antennas
+    const antennaGeometry = new THREE.CylinderGeometry(0.03, 0.03, 0.8, 8);
+    const a1 = new THREE.Mesh(antennaGeometry, this.headMaterial);
+    a1.rotation.z = -Math.PI / 6;
+    a1.position.x = 0.6;
+    a1.position.y = 1;
+    this.head.add(a1);
+
+    const a2 = new THREE.Mesh(antennaGeometry, this.headMaterial);
+    a2.rotation.z = Math.PI / 6;
+    a2.position.x = -0.6;
+    a2.position.y = 1;
+    this.head.add(a2);
 
     // Add the head group to the figure
     this.group.add(this.head);
@@ -201,6 +230,8 @@ class Figure {
 
     eyes.position.y = -0.1;
     eyes.position.z = 0.7;
+
+    this.leftEyeScale = eyes.children[0];
   }
 
   createLegs() {
@@ -230,40 +261,76 @@ class Figure {
       const m = index % 2 === 0 ? 1 : -1;
       arm.rotation.z = this.params.armRotation * m;
     });
+
+    //Rotation head
+    this.head.rotation.z = this.params.headRotation;
+    this.leftEyeScale.scale.set(this.params.leftEyeScale, this.params.leftEyeScale, this.params.leftEyeScale);
   }
 
   init() {
     this.createBody();
     this.createHead();
     this.createArms();
+    this.createLegs();
   }
 }
 
 const figure = new Figure();
 figure.init();
 
+//Timeline for jumping
+let jumpTL = gsap.timeline();
+document.addEventListener("keydown", (event) => {
+  if (event.key == " " && !jumpTL.isActive()) {
+    jumpTL.to(figure.params, {
+      y: 3,
+      armRotation: degreesToRadians(90),
+      repeat: 1,
+      yoyo: true,
+      duration: 0.5,
+    });
+  }
+});
+
+//Rotation Y
+let rySpeed = 0;
+document.addEventListener("keydown", (event) => {
+  if (event.key == "ArrowLeft") {
+    rySpeed +=0.15;
+  } 
+  else if (event.key == "ArrowRight") {
+    rySpeed -=0.15;
+  }
+});
+
 gsap.set(figure.params, {
-  y: -1.5 // Adjusted to -1.5 to match the plane's y position
+  y: -1.5
 });
 
-gsap.to(figure.params, {
-  ry: degreesToRadians(360),
-  repeat: -1,
-  duration: 20
-});
-
-gsap.to(figure.params, {
-  y: 0,
-  armRotation: degreesToRadians(90),
+//Mode idle
+let idleTL = gsap.timeline();
+idleTL.to(figure.params, {
+  headRotation: Math.PI/3,
   repeat: -1,
   yoyo: true,
-  duration: 0.5
+  delay: 2.5,
+  duration: 0.75,
 });
 
+idleTL.to(figure.params, {
+  leftEyeScale: 1.5,
+  repeat: -1,
+  yoyo: true,
+  duration: 1,
+  }, ">2.2"
+);
+
 gsap.ticker.add(() => {
+  figure.params.ry += rySpeed;
+  rySpeed *= 0.93;
   figure.bounce();
-  render();
   stats.update();
+  render();
 });
 
 // Controls (Q1)
@@ -293,4 +360,4 @@ gui.add(params, "axesHelper").onChange((value) => {
   axesHelper.visible = value;
 });
 
-render();
+
