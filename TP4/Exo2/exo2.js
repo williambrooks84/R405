@@ -278,10 +278,31 @@ class Figure {
 const figure = new Figure();
 figure.init();
 
+//Mode idle
+let idleTL = gsap.timeline();
+idleTL.to(figure.params, {
+  headRotation: Math.PI/3,
+  repeat: -1,
+  yoyo: true,
+  delay: 2.5,
+  duration: 0.75,
+  ease: "back.out"
+});
+
+idleTL.to(figure.params, {
+  leftEyeScale: 1.5,
+  repeat: -1,
+  yoyo: true,
+  duration: 1,
+  ease: "elastic.in"
+  }, ">2.2"
+);
+
 //Timeline for jumping
 let jumpTL = gsap.timeline();
 document.addEventListener("keydown", (event) => {
   if (event.key == " " && !jumpTL.isActive()) {
+    idleTL.pause(0);
     jumpTL.to(figure.params, {
       y: 3,
       armRotation: degreesToRadians(90),
@@ -297,9 +318,11 @@ let rySpeed = 0;
 document.addEventListener("keydown", (event) => {
   if (event.key == "ArrowLeft") {
     rySpeed +=0.15;
+    idleTL.pasuse(0);
   } 
   else if (event.key == "ArrowRight") {
     rySpeed -=0.15;
+    idleTL.pasuse(0);
   }
 });
 
@@ -307,27 +330,12 @@ gsap.set(figure.params, {
   y: -1.5
 });
 
-//Mode idle
-let idleTL = gsap.timeline();
-idleTL.to(figure.params, {
-  headRotation: Math.PI/3,
-  repeat: -1,
-  yoyo: true,
-  delay: 2.5,
-  duration: 0.75,
-});
-
-idleTL.to(figure.params, {
-  leftEyeScale: 1.5,
-  repeat: -1,
-  yoyo: true,
-  duration: 1,
-  }, ">2.2"
-);
-
 gsap.ticker.add(() => {
   figure.params.ry += rySpeed;
   rySpeed *= 0.93;
+  if (!jumpTL.isActive() && !idleTL.isActive() && (rySpeed < 0.01)){
+    idleTL.restart();
+  }
   figure.bounce();
   stats.update();
   render();
